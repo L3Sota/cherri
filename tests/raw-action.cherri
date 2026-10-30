@@ -4,3 +4,40 @@ rawAction("is.workflow.actions.alert", {
     "WFAlertActionMessage": "Hello, world!",
     "WFAlertActionTitle": "Alert"
 })
+
+// Pre-serialized parameters (with WFSerializationType) pass through verbatim, with plist integers and dates.
+rawAction("is.workflow.actions.filter.photos", {
+    "WFContentItemFilter": {
+        "Value": {
+            "WFActionParameterFilterPrefix": 1,
+            "WFActionParameterFilterTemplates": [
+                {
+                    "Operator": 4,
+                    "Property": "Album",
+                    "Removable": true,
+                    "Values": {
+                        "Enumeration": {
+                            "Value": "Recents",
+                            "WFSerializationType": "WFStringSubstitutableState"
+                        },
+                        "Unit": 4
+                    }
+                },
+                {
+                    "Operator": 1003,
+                    "Property": "Date Taken",
+                    "Removable": true,
+                    "Values": {
+                        "Date": {"$date": "2025-01-01T00:00:00+09:00"},
+                        "AnotherDate": {"$date": "2025-02-01T00:00:00+09:00"},
+                        "Unit": 4
+                    }
+                }
+            ],
+            "WFContentPredicateBoundedDate": false
+        },
+        "WFSerializationType": "WFContentPredicateTableTemplate"
+    },
+    "WFContentItemSortOrder": "Oldest First",
+    "WFContentItemSortProperty": "Date Taken"
+})

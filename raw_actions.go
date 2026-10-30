@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"math"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var rawActionVariableValueRegex = regexp.MustCompile(`^\$\{@?.*}$`)
@@ -57,6 +60,9 @@ func normalizeRawActionParamValue(value any) any {
 		}
 		return attachmentValues(v)
 	case map[string]any:
+		if _, serialized := v["WFSerializationType"]; serialized {
+			return rawPlistValue(v)
+		}
 		var normalized any = normalizeRawActionDictionary(v)
 		return makeDictionaryValue(&normalized)
 	case []any:
@@ -80,4 +86,38 @@ func makeRawActionArrayValue(value []any) WFArrayValue {
 		items = append(items, makeDictionaryItem("", normalizeRawActionParamValue(item)))
 	}
 	return makeArrayValue(items)
+}
+
+// rawPlistValue passes an already-serialized parameter through verbatim, since wrapping it as a Dictionary
+// action value breaks it, and JSON can't express plist integers or dates: integral numbers become integers
+// and {"$date": "<RFC 3339>"} becomes a date.
+func rawPlistValue(value any) any {
+	switch v := value.(type) {
+	case map[string]any:
+		if dateString, ok := v["$date"].(string); ok && len(v) == 1 {
+			var date, parseErr = time.Parse(time.RFC3339, dateString)
+			if parseErr != nil {
+				exit(fmt.Sprintf("Invalid $date %q in raw action parameters: %s", dateString, parseErr))
+			}
+			return date
+		}
+		var passed = make(map[string]any, len(v))
+		for key, item := range v {
+			passed[key] = rawPlistValue(item)
+		}
+		return passed
+	case []any:
+		var passed = make([]any, len(v))
+		for i, item := range v {
+			passed[i] = rawPlistValue(item)
+		}
+		return passed
+	case float64:
+		if v == math.Trunc(v) {
+			return int64(v)
+		}
+		return v
+	default:
+		return value
+	}
 }
