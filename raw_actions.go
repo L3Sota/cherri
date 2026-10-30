@@ -37,6 +37,14 @@ func defineRawAction() {
 	}
 }
 
+// overrideRawActionIdentifier must run after setCurrentAction, which copies the shared rawAction definition,
+// on every path that generates an action, including when its output is assigned to a variable or constant.
+func overrideRawActionIdentifier(tokenAction *action) {
+	if tokenAction.ident == "rawAction" && len(tokenAction.args) > 0 {
+		currentAction.definition.overrideIdentifier = getArgValue(tokenAction.args[0]).(string)
+	}
+}
+
 func handleRawParams(params map[string]any) {
 	for key, value := range params {
 		params[key] = normalizeRawActionParamValue(value)
