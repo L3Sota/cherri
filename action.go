@@ -428,6 +428,10 @@ func typeCheck(param *parameterDefinition, argument *actionArgument) {
 		validActionOutput(param, argVal)
 		return
 	case argValueType == Variable:
+		// A property's type isn't the type of the variable it's read from, and isn't known at compile time.
+		if argVal.(varValue).getAs != "" {
+			return
+		}
 		var identifier = argVal.(varValue).value.(string)
 		var getVar = realVariableValue(identifier, String)
 		argValueType = checkTypeTransform(getVar.valueType)
